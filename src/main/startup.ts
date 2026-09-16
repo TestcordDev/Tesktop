@@ -10,8 +10,10 @@ import "./userAssets";
 import "./vesktopProtocol";
 
 import { app, BrowserWindow, nativeTheme } from "electron";
+import { rmSync } from "fs";
+import { join } from "path";
 
-import { DATA_DIR } from "./constants";
+import { DATA_DIR, SESSION_DATA_DIR } from "./constants";
 import { createFirstLaunchTour } from "./firstLaunch";
 import { createWindows } from "./mainWindow";
 import { registerMediaPermissionsHandler } from "./mediaPermissions";
@@ -28,7 +30,23 @@ const isLinux = process.platform === "linux";
 
 export let enableHardwareAcceleration = true;
 
+function clearStaleWasmCodeCache() {
+    const { electron } = process.versions;
+    if (State.store.lastElectronVersion === electron) return;
+
+    try {
+        rmSync(join(SESSION_DATA_DIR, "Code Cache", "wasm"), { recursive: true, force: true });
+        console.log(`Electron version changed to ${electron}, cleared WebAssembly code cache`);
+    } catch (err) {
+        console.error("Failed to clear code cache:", err);
+        return;
+    }
+
+    State.store.lastElectronVersion = electron;
+}
+
 function init() {
+    clearStaleWasmCodeCache();
     setAsDefaultProtocolClient("discord");
 
     const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration } = Settings.store;
