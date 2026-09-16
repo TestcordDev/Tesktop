@@ -38,7 +38,7 @@
         "ws": "^8.21.3"
     },
     "optionalDependencies": {
-        "@vencord/venmic": "^7.2.1"
+        "@vencord/venmic": "^7.2.3"
     },
     "devDependencies": {
         "@equicord/types": "^1.14.15",
@@ -90,6 +90,9 @@
         },
         "beforePack": "scripts/build/beforePack.mjs",
         "afterPack": "scripts/build/afterPack.mjs",
+        "toolsets": {
+            "appimage": "1.0.3"
+        },
         "linux": {
             "icon": "build/icon.svg",
             "category": "Network",
