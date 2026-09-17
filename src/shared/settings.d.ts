@@ -117,6 +117,8 @@ export interface State {
 
     launchArguments?: string;
 
+    lastElectronVersion?: string;
+
     updater?: {
         ignoredVersion?: string;
         snoozeUntil?: number;
