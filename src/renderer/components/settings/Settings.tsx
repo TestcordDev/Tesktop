@@ -282,8 +282,7 @@ function SettingsSections() {
                 {settings.map((Setting, i) => {
                     if (typeof Setting === "function") return <Setting key={`Custom-${i}`} settings={Settings} />;
 
-                    const { title, description, key, disabled, invisible, defaultValue } =
-                        Setting as BooleanSetting;
+                    const { title, description, key, disabled, invisible, defaultValue } = Setting as BooleanSetting;
                     if (invisible?.()) return null;
 
                     if (defaultValue !== undefined) {
