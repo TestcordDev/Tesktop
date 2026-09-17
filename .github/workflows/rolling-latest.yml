@@ -85,12 +85,15 @@ jobs:
             - name: List assets
               run: ls -lh release-assets/
 
-            - name: Recreate latest release
+            - name: Publish to latest release
               run: |
-                  gh release delete latest --cleanup-tag --yes || true
-                  gh release create latest release-assets/* \
+                  if ! gh release view latest >/dev/null 2>&1; then
+                    gh release create latest \
                       --prerelease \
                       --title "Latest rolling build (main)" \
-                      --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
+                      --notes "Rolling build; auto-updated on every push to main. For stable versions see the v* releases."
+                  fi
+                  gh release edit latest --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
+                  gh release upload latest release-assets/* --clobber
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
