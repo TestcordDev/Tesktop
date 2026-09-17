@@ -94,6 +94,18 @@ jobs:
                       --notes "Rolling build; auto-updated on every push to main. For stable versions see the v* releases."
                   fi
                   gh release edit latest --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
-                  gh release upload latest release-assets/* --clobber
+                  for f in release-assets/*; do
+                    for i in 1 2 3 4 5; do
+                      if gh release upload latest "$f" --clobber; then
+                        break
+                      fi
+                      echo "Upload of $f failed (attempt $i/5), retrying in 15s..."
+                      sleep 15
+                      if [ "$i" -eq 5 ]; then
+                        echo "Gave up on $f"
+                        exit 1
+                      fi
+                    done
+                  done
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
