@@ -93,7 +93,7 @@ jobs:
                       --title "Latest rolling build (main)" \
                       --notes "Rolling build; auto-updated on every push to main. For stable versions see the v* releases."
                   fi
-                  gh release edit latest --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
+                  gh release edit latest --prerelease --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
                   for f in release-assets/*; do
                     for i in 1 2 3 4 5; do
                       if gh release upload latest "$f" --clobber; then
