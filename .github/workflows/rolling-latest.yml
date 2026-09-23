@@ -3,8 +3,8 @@ name: Rolling Latest
 # Builds the newest installers on every main push and (re)publishes them to
 # the rolling `latest` release, so `.../releases/tag/latest` always has fresh
 # binaries. Versioned releases via tags (v*) are unaffected (see release.yml).
-# The `latest` release is marked as prerelease so the in-app auto-updater
-# (which tracks stable releases) ignores it.
+# The `latest` release is kept as a full release and the repo's latest, so the
+# in-app auto-updater picks up every push.
 
 on:
     push:
@@ -89,11 +89,14 @@ jobs:
               run: |
                   if ! gh release view latest >/dev/null 2>&1; then
                     gh release create latest \
-                      --prerelease \
                       --title "Latest rolling build (main)" \
                       --notes "Rolling build; auto-updated on every push to main. For stable versions see the v* releases."
                   fi
-                  gh release edit latest --prerelease --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
+                  # keep the rolling release as a full release and the repo's
+                  # latest (not a prerelease) so the in-app updater picks it up
+                  release_id=$(gh release view latest --json databaseId --jq .databaseId)
+                  echo '{"prerelease":false,"make_latest":"true"}' | gh api "repos/${{ github.repository }}/releases/${release_id}" -X PATCH --input - > /dev/null
+                  gh release edit latest --notes "Rolling build from main @ ${{ github.sha }}. Auto-updated on every push; for stable versions see the v* releases."
                   for f in release-assets/*; do
                     for i in 1 2 3 4 5; do
                       if gh release upload latest "$f" --clobber; then
