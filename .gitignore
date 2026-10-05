@@ -7,3 +7,7 @@ node_modules
 resources
 downloads/
 downloads
+
+# Built from src/renderer/accountTabs/shell.ts by scripts/build/build.mts
+static/views/accountShell.js
+static/views/accountShell.js.map

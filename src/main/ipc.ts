@@ -27,6 +27,8 @@ import { STATIC_DIR } from "shared/paths";
 import { debounce } from "shared/utils/debounce";
 
 import { IpcEvents } from "../shared/IpcEvents";
+import { registerAccountTabsIpc } from "./accountTabs";
+import { sendToActiveApp, sendToAllApps } from "./accountTabs/targets";
 import { setBadgeCount } from "./appBadge";
 import { createArRPCWindow } from "./arrpcWindow";
 import { autoStart } from "./autoStart";
@@ -52,10 +54,7 @@ handle(IpcEvents.GET_VESKTOP_RENDERER_CSS, () => readFile(VESKTOP_RENDERER_CSS_P
 
 if (IS_DEV) {
     watch(VESKTOP_RENDERER_CSS_PATH, { persistent: false }, async () => {
-        mainWin?.webContents.postMessage(
-            IpcEvents.VESKTOP_RENDERER_CSS_UPDATE,
-            await readFile(VESKTOP_RENDERER_CSS_PATH, "utf-8")
-        );
+        sendToActiveApp(IpcEvents.VESKTOP_RENDERER_CSS_UPDATE, await readFile(VESKTOP_RENDERER_CSS_PATH, "utf-8"));
     });
 }
 
@@ -111,8 +110,16 @@ handle(IpcEvents.SHOW_CUSTOM_VENCORD_DIR, async () => {
     shell.openPath(testcordDir);
 });
 
+registerAccountTabsIpc();
+
+/**
+ * Popouts live in real BrowserWindows, keyed by Discord's frame name. An account
+ * view in parallel mode is not one of them, so its window controls fall through to
+ * the main window.
+ */
 function getWindow(e: IpcMainInvokeEvent, key?: string) {
-    return key ? PopoutWindows.get(key)! : (BrowserWindow.fromWebContents(e.sender) ?? mainWin);
+    if (key) return PopoutWindows.get(key)!;
+    return BrowserWindow.fromWebContents(e.sender) ?? mainWin;
 }
 
 handle(IpcEvents.FOCUS, () => {
@@ -212,7 +219,8 @@ open(VENCORD_QUICKCSS_FILE, "a+")
             VENCORD_QUICKCSS_FILE,
             { persistent: false },
             debounce(async () => {
-                mainWin?.webContents.postMessage("VencordQuickCssUpdate", await readCss());
+                // Every account has its own renderer, so quickCss has to reach all of them.
+                sendToAllApps("VencordQuickCssUpdate", await readCss());
             }, 50)
         );
     })
@@ -225,7 +233,7 @@ themesWatcher = watch(
     VENCORD_THEMES_DIR,
     { persistent: false },
     debounce(() => {
-        mainWin?.webContents.postMessage("VencordThemeUpdate", void 0);
+        sendToAllApps("VencordThemeUpdate", void 0);
     })
 );
 

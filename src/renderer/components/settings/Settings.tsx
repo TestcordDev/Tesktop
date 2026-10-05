@@ -12,6 +12,7 @@ import { ComponentType } from "react";
 import { getValueAndOnChange, Settings, useSettings } from "renderer/settings";
 import { isMac } from "renderer/utils";
 
+import { accountTabsBooleanSettings, AccountTabsModePicker } from "./AccountTabsSettings";
 import { ArRPCSettingsButton } from "./ArRPCSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
@@ -24,7 +25,7 @@ import { VesktopSettingsSwitch } from "./VesktopSettingsSwitch";
 import { WebRTCIPHandlingPolicyPicker } from "./WebRTCIPHandlingPolicyPicker";
 import { WindowsTransparencyControls } from "./WindowsTransparencyControls";
 
-interface BooleanSetting {
+export interface BooleanSetting {
     key: keyof typeof Settings.store;
     title: string;
     description: string;
@@ -234,6 +235,20 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             description: "Keep Discord popout windows (e.g., voice) always on top.",
             defaultValue: true
         }
+    ],
+    "Account Tabs": [
+        {
+            key: "accountTabs",
+            title: "Account Tabs",
+            description:
+                "Open a tab per Discord account and switch between them like a browser. Each account remembers the channel, DM or guild you left it on, and your tabs come back after restarting Tesktop.",
+            defaultValue: false
+        },
+        ...accountTabsBooleanSettings.map(setting => ({
+            ...setting,
+            invisible: () => !Settings.store.accountTabs
+        })),
+        AccountTabsModePicker
     ],
     Tabs: [
         {

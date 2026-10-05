@@ -4,12 +4,27 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { session, systemPreferences } from "electron";
+import { type Session, session, systemPreferences } from "electron";
 
+import { AppEvents } from "./events";
+
+/**
+ * macOS gates mic and camera access behind a system prompt. Electron's own prompt
+ * is not shown, so we have to ask for the access ourselves.
+ *
+ * Applied to the default session and to every account tab partition.
+ */
 export function registerMediaPermissionsHandler() {
     if (process.platform !== "darwin") return;
 
-    session.defaultSession.setPermissionRequestHandler(async (_webContents, permission, callback, details) => {
+    const onNewAccountSession = (ses: Session) => installPermissionHandler(ses);
+    AppEvents.on("newAccountSession", onNewAccountSession);
+
+    installPermissionHandler(session.defaultSession);
+}
+
+function installPermissionHandler(ses: Session) {
+    ses.setPermissionRequestHandler(async (_webContents, permission, callback, details) => {
         let granted = true;
 
         if ("mediaTypes" in details) {

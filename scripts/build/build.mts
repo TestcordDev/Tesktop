@@ -104,6 +104,13 @@ await Promise.all([
         outfile: "dist/js/splashPreload.js",
         footer: { js: "//# sourceURL=VesktopSplashPreload" }
     }),
+    // Minimal preload for the parallel-mode account tab bar shell
+    createContext({
+        ...NodeCommonOpts,
+        entryPoints: ["src/preload/accountTabsShell.ts"],
+        outfile: "dist/js/accountTabsShellPreload.js",
+        footer: { js: "//# sourceURL=TesktopAccountTabsShellPreload" }
+    }),
     createContext({
         ...NodeCommonOpts,
         entryPoints: ["src/preload/updater.ts"],
@@ -115,6 +122,16 @@ await Promise.all([
         entryPoints: ["src/preload/arrpcSettings.ts"],
         outfile: "dist/js/arrpcSettingsPreload.js",
         footer: { js: "//# sourceURL=VesktopArRPCSettingsPreload" }
+    }),
+    // Account tab bar for parallel mode. Built as its own IIFE because it runs in a
+    // plain testktop:// window with no Vencord, no React and no Tesktop renderer.
+    createContext({
+        ...CommonOpts,
+        entryPoints: ["src/renderer/accountTabs/shell.ts"],
+        outfile: "static/views/accountShell.js",
+        format: "iife",
+        minify: false,
+        external: ["@equicord/types/*"]
     }),
     createContext({
         ...CommonOpts,

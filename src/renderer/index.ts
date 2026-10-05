@@ -72,6 +72,14 @@ VesktopNative.voice.onToggleVAD(() => {
         console.warn("[Tesktop] GoofCord patches failed", e);
     }
 
+    // Account Tabs: one tab per account, remembering where you were in each.
+    try {
+        const { initAccountTabs } = await import("./accountTabs");
+        await initAccountTabs();
+    } catch (e) {
+        console.warn("[Tesktop] Account tabs failed to load", e);
+    }
+
     // Innovative Tabs — FORCE DISABLED for now (wrongly integrated)
     // if (settings.tabsEnabled) { mountTesktopTabs() }
     void 0;

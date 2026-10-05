@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { Socket } from "net";
 import { IpcEvents } from "shared/IpcEvents";
 
-import { mainWin } from "./mainWindow";
+import { sendToActiveApp } from "./accountTabs/targets";
 
 const xdgRuntimeDir = process.env.XDG_RUNTIME_DIR;
 const socketFile = xdgRuntimeDir ? join(xdgRuntimeDir, "vesktop-ipc") : null;
@@ -64,7 +64,8 @@ function openFIFO(path: string) {
             pipe.on("data", data => {
                 const action = data.toString().trim();
                 if (Actions.has(action as IpcEvents)) {
-                    mainWin.webContents.send(action);
+                    // Voice/mute keys follow whichever account tab is in front.
+                    sendToActiveApp(action);
                 }
             });
 

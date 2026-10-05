@@ -24,6 +24,7 @@ import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
 
 import { createAboutWindow } from "./about";
+import { accountShellPreloadPath } from "./accountTabs/shell";
 import { destroyAppBadge } from "./appBadge";
 import { cleanupArRPC, initArRPC, setupArRPC } from "./arrpc";
 import { CommandLine } from "./cli";
@@ -265,6 +266,10 @@ function initSettingsListeners(win: BrowserWindow) {
 }
 
 async function initSpellCheckLanguages(_win: BrowserWindow, languages?: string[]) {
+    // The account tab bar shell has no renderer to ask, and in parallel mode the
+    // accounts live in their own views with their own spellchecker sessions.
+    if (!languages && useAccountShell()) return;
+
     languages ??= await sendRendererCommand(IpcCommands.GET_LANGUAGES);
     if (!languages) return;
 
@@ -342,6 +347,17 @@ function getWindowBoundsOptions(): BrowserWindowConstructorOptions {
     return options;
 }
 
+/**
+ * Parallel mode swaps the main preload for the small account-shell one: the window's
+ * own page stops being Discord, so it must stop loading the Discord bundle.
+ */
+function getWindowPreload(): string {
+    if (Settings.store.accountTabs === true && Settings.store.accountTabsMode === "parallel") {
+        return accountShellPreloadPath();
+    }
+    return join(__dirname, "preload.js");
+}
+
 function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     addSplashLog();
 
@@ -374,7 +390,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
             sandbox: true,
             contextIsolation: true,
             devTools: true,
-            preload: join(__dirname, "preload.js"),
+            preload: getWindowPreload(),
             spellcheck: true,
             ...(Settings.store.middleClickAutoscroll && {
                 enableBlinkFeatures: "MiddleClickAutoscroll"
@@ -506,7 +522,9 @@ function createMainWindow() {
 
     // if the open-url event is fired (in index.ts) while starting up, darwinURL will be set. If not fall back to checking the process args (which Windows and Linux use for URI calling.)
     // win.webContents.session.clearCache().then(() => {
-    loadUrl(darwinURL || process.argv.find(arg => arg.startsWith("discord://")));
+    // In parallel mode this window hosts the tab bar shell, not Discord. Loading
+    // Discord here too would race the shell and leave the retry loop spinning.
+    if (!useAccountShell()) loadUrl(darwinURL || process.argv.find(arg => arg.startsWith("discord://")));
     addSplashLog();
     // });
 
@@ -515,15 +533,27 @@ function createMainWindow() {
 
 const runVencordMain = once(() => require(VENCORD_DIR));
 
-export function loadUrl(uri: string | undefined) {
+export function discordOrigin() {
     const branch = Settings.store.discordBranch;
     const subdomain = branch === "canary" || branch === "ptb" ? `${branch}.` : "";
+    return `https://${subdomain}discord.com`;
+}
 
-    // we do not rely on 'did-finish-load' because it fires even if loadURL fails which triggers early detruction of the splash
+export function loadUrl(uri: string | undefined) {
+    // we do not rely on 'did-finish-load' because it fires even if loadURL fails which triggers early destruction of the splash
     mainWin
-        .loadURL(`https://${subdomain}discord.com/${uri ? new URL(uri).pathname.slice(1) || "app" : "app"}`)
+        .loadURL(`${discordOrigin()}/${uri ? new URL(uri).pathname.slice(1) || "app" : "app"}`)
         .then(() => AppEvents.emit("appLoaded"))
         .catch(error => retryUrl(error.url, error.code));
+}
+
+/**
+ * Parallel account tabs replace the window's own page with a tiny shell that hosts
+ * the tab bar; each account then gets a `WebContentsView` stacked on top of it.
+ * Swap mode needs none of this and keeps the stock layout.
+ */
+function useAccountShell(): boolean {
+    return Settings.store.accountTabs === true && Settings.store.accountTabsMode === "parallel";
 }
 
 const retryDelay = 1000;
@@ -567,6 +597,22 @@ export async function createWindows() {
 
     addSplashLog();
     mainWin = createMainWindow();
+
+    if (useAccountShell()) {
+        const { initParallelMode, syncParallelViews } = await import("./accountTabs/parallel");
+        const { loadAccountShellUrl } = await import("./accountTabs/shell");
+
+        initParallelMode(mainWin);
+        await loadAccountShellUrl(mainWin);
+        syncParallelViews();
+
+        const { cleanUpOrphanedAccountSessions } = await import("./accountTabs");
+        cleanUpOrphanedAccountSessions();
+
+        // Discord's navigation guard is meaningless against our own shell URL.
+        mainWin.webContents.removeAllListeners("did-navigate");
+        mainWin.webContents.removeAllListeners("render-process-gone");
+    }
 
     AppEvents.on("appLoaded", () => {
         splash?.destroy();

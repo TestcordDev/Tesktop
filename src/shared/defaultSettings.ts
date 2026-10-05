@@ -40,5 +40,12 @@ export const DefaultEquibopSettings: Settings = {
     webRTCIPHandlingPolicy: "default",
     appBadge: true,
     badgeOnlyForMentions: false,
-    transparencyOption: "none"
+    transparencyOption: "none",
+
+    // Account Tabs
+    accountTabs: false,
+    accountTabsMode: "swap",
+    accountTabsShowAvatars: true,
+    accountTabsRememberRoute: true,
+    accountTabsConfirmClose: false
 };

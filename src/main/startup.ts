@@ -59,6 +59,12 @@ function init() {
     Settings.store.tabsEnabled = false;
     if (Settings.store.tabsPosition === undefined) Settings.store.tabsPosition = "top";
 
+    // Account Tabs
+    if (Settings.store.accountTabsMode === undefined) Settings.store.accountTabsMode = "swap";
+    if (Settings.store.accountTabsShowAvatars === undefined) Settings.store.accountTabsShowAvatars = true;
+    if (Settings.store.accountTabsRememberRoute === undefined) Settings.store.accountTabsRememberRoute = true;
+    if (Settings.store.accountTabsConfirmClose === undefined) Settings.store.accountTabsConfirmClose = false;
+
     // Apply GoofCord performance flags early
     try {
         const { applyPerformanceFlags } = require("./modules/performance");

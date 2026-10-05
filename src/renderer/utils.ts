@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-// Discord deletes this from the window so we need to capture it in a variable
-export const { localStorage } = window;
+// Discord deletes these from the window so we need to capture them in variables.
+// The renderer bundle is injected before Discord's own code runs, so this happens
+// early enough — reaching for the bare globals later throws a ReferenceError.
+export const { localStorage, sessionStorage } = window;
 
 export const isFirstRun = (() => {
     const key = "VCD_FIRST_RUN";

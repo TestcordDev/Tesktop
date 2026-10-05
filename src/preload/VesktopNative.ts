@@ -7,7 +7,17 @@
 import type { Node } from "@vencord/venmic";
 import { ipcRenderer } from "electron/renderer";
 import type { IpcMessage, IpcResponse } from "main/ipcCommands";
+import type { AccountRoute, AccountTabData, AccountTabsState } from "shared/accountTabs";
 import type { Settings } from "shared/settings";
+
+export interface AccountTabReport {
+    userId?: string | null;
+    username?: string | null;
+    discriminator?: string | null;
+    avatar?: string | null;
+    unread?: number;
+    route?: AccountRoute;
+}
 
 import { IpcEvents } from "../shared/IpcEvents";
 import { invoke, sendSync } from "./typedIpc";
@@ -73,6 +83,22 @@ export const VesktopNative = {
     settings: {
         get: () => sendSync<Settings>(IpcEvents.GET_SETTINGS),
         set: (settings: Settings, path?: string) => invoke<void>(IpcEvents.SET_SETTINGS, settings, path)
+    },
+    accountTabs: {
+        get: () => sendSync<AccountTabsState>(IpcEvents.ACCOUNT_TABS_GET),
+        setActive: (id: string | null) => invoke<AccountTabsState>(IpcEvents.ACCOUNT_TABS_SET_ACTIVE, id),
+        create: (partial?: Partial<AccountTabData>) => invoke<AccountTabData>(IpcEvents.ACCOUNT_TABS_CREATE, partial),
+        remove: (id: string) => invoke<AccountTabsState>(IpcEvents.ACCOUNT_TABS_REMOVE, id),
+        update: (id: string, patch: Partial<AccountTabData>) =>
+            invoke<AccountTabData | null>(IpcEvents.ACCOUNT_TABS_UPDATE, id, patch),
+        getToken: (id: string) => invoke<string | null>(IpcEvents.ACCOUNT_TABS_GET_TOKEN, id),
+        clear: () => invoke<AccountTabsState>(IpcEvents.ACCOUNT_TABS_CLEAR),
+        isEncryptionAvailable: () => sendSync<boolean>(IpcEvents.ACCOUNT_TABS_ENCRYPTION_AVAILABLE),
+        onUpdate(cb: (state: AccountTabsState) => void) {
+            ipcRenderer.on(IpcEvents.ACCOUNT_TABS_STATE, (_, state: AccountTabsState) => cb(state));
+        },
+        /** Used by the parallel-mode shell and by account views to identify themselves. */
+        report: (payload: AccountTabReport) => ipcRenderer.send(IpcEvents.ACCOUNT_TAB_REPORT, payload)
     },
     spellcheck: {
         getAvailableLanguages: () => sendSync<string[]>(IpcEvents.SPELLCHECK_GET_AVAILABLE_LANGUAGES),

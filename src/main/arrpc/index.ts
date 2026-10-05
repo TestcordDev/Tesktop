@@ -12,7 +12,7 @@ import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
 import { WebSocket } from "ws";
 
-import { mainWin } from "../mainWindow";
+import { sendToActiveApp } from "../accountTabs/targets";
 import { Settings } from "../settings";
 import { isLocalArrpcHost, sanitizeArrpcPort } from "../utils/arrpcHostValidation";
 
@@ -426,7 +426,7 @@ function connectWebSocket() {
             const message = JSON.parse(data.toString());
             debugLog("Received activity:", message);
 
-            mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, message);
+            sendToActiveApp(IpcEvents.ARRPC_ACTIVITY, message);
         } catch (e) {
             debugLog("Failed to parse WebSocket message:", e);
         }
@@ -452,7 +452,7 @@ function connectWebSocket() {
                 connectWebSocket();
             }, WS_RECONNECT_INTERVAL_MS);
         } else {
-            mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, { activity: null });
+            sendToActiveApp(IpcEvents.ARRPC_ACTIVITY, { activity: null });
         }
     });
 
@@ -478,7 +478,7 @@ function stopWebSocket() {
         disposeWebSocket(prev);
     }
 
-    mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, { activity: null });
+    sendToActiveApp(IpcEvents.ARRPC_ACTIVITY, { activity: null });
     debugLog("WebSocket stopped");
 }
 
@@ -768,7 +768,7 @@ async function initArRPCInner() {
                             (inner.activity === null || (inner.activity && typeof inner.activity === "object"))
                         ) {
                             debugLog(`Streamer mode changed: ${inner.activity != null ? "ON" : "OFF"}`);
-                            mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, {
+                            sendToActiveApp(IpcEvents.ARRPC_ACTIVITY, {
                                 socketId: "STREAMERMODE",
                                 activity: inner.activity
                             });

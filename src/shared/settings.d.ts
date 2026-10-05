@@ -6,6 +6,8 @@
 
 import type { Rectangle } from "electron";
 
+import type { AccountTabsMode } from "./accountTabs";
+
 export interface Settings {
     discordBranch: "stable" | "canary" | "ptb";
     transparencyOption: "none" | "mica" | "tabbed" | "acrylic";
@@ -81,6 +83,13 @@ export interface Settings {
     popoutWindowAlwaysOnTop?: boolean;
     customIconPath?: string;
     trayIconStyle?: "default" | "symbolic_black" | "symbolic_white";
+
+    // Account Tabs
+    accountTabs?: boolean;
+    accountTabsMode?: AccountTabsMode;
+    accountTabsShowAvatars?: boolean;
+    accountTabsRememberRoute?: boolean;
+    accountTabsConfirmClose?: boolean;
 
     // Innovative Tabs
     tabsEnabled?: boolean;

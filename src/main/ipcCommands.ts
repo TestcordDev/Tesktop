@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { ipcMain } from "electron";
 import { IpcEvents } from "shared/IpcEvents";
 
+import { activeAppWebContents } from "./accountTabs/targets";
 import { mainWin } from "./mainWindow";
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -63,7 +64,10 @@ export function sendRendererCommand<T = unknown>(
         });
     });
 
-    mainWin.webContents.send(IpcEvents.IPC_COMMAND, { nonce, message, data });
+    // In parallel mode the window's own page is the tab bar shell, so commands have
+    // to go to whichever account view the user is actually looking at.
+    const target = activeAppWebContents() ?? mainWin.webContents;
+    target.send(IpcEvents.IPC_COMMAND, { nonce, message, data });
 
     return promise;
 }

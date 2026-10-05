@@ -1,0 +1,59 @@
+<!doctype html>
+<!--
+    Vesktop, a desktop app aiming to give you a snappier Discord Experience
+    Copyright (c) 2026 Vendicated and Vesktop contributors
+    SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <!-- 'self' is required for accountShell.js; connect-src is needed to reach Discord's API when verifying a pasted token. -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src https: data:; connect-src https://discord.com;"
+        />
+        <title>Tesktop Account Tabs</title>
+        <style>
+            :root {
+                color-scheme: dark;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+                background: #1e1f22;
+                font-family: "gg sans", "Noto Sans", Helvetica, Arial, sans-serif;
+            }
+
+            #strip-host {
+                height: 38px;
+                box-sizing: border-box;
+            }
+
+            /* Native titlebars get a drag region; frameless windows need one too. */
+            body {
+                -webkit-app-region: drag;
+            }
+
+            .tab,
+            .button {
+                -webkit-app-region: no-drag;
+            }
+
+            #warning {
+                display: none;
+                padding: 6px 12px;
+                background: #4a2c00;
+                color: #f0b232;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="strip-host"></div>
+        <script src="./accountShell.js"></script>
+    </body>
+</html>
