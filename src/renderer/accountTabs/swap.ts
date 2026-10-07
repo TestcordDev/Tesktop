@@ -227,8 +227,12 @@ async function closeTab(tabId: string) {
 
 async function addAccount() {
     // Add a placeholder tab and switch to it, which shows Discord's login screen.
+    //
+    // `force` matters here: creating the first tab also makes it active, so without
+    // it selectTab would see "already selected" and do nothing — leaving an inert
+    // tab and no login screen.
     const tab = await createAccountTab({ route: { guildId: null, channelId: null } });
-    await selectTab(tab.id);
+    await selectTab(tab.id, true);
 }
 
 async function addAccountViaToken() {
@@ -251,7 +255,7 @@ async function addAccountViaToken() {
         return;
     }
 
-    await createAccountTab({
+    const tab = await createAccountTab({
         userId: identity.id,
         username: identity.username,
         discriminator: identity.discriminator,
@@ -259,6 +263,9 @@ async function addAccountViaToken() {
         accentColor: accentColorFor(identity.id),
         token
     });
+
+    // Switch to it, or the token gets stored for an account nobody is looking at.
+    await selectTab(tab.id, true);
 
     showToast(`Added ${identity.username}.`, "success");
 }
