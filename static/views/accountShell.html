@@ -33,13 +33,20 @@
                 box-sizing: border-box;
             }
 
-            /* Native titlebars get a drag region; frameless windows need one too. */
+            /*
+             * Native titlebars get a drag region; frameless windows need one too.
+             * Everything inside a drag region becomes undraggable AND unclickable,
+             * so the actual tab classes have to opt back out. These must match the
+             * class names in src/renderer/accountTabs/tabBar.ts.
+             */
             body {
                 -webkit-app-region: drag;
             }
 
-            .tab,
-            .button {
+            .tesktop-account-tab,
+            .tesktop-account-tabs-button,
+            .tesktop-account-tab-close,
+            .tesktop-account-tabs-spacer {
                 -webkit-app-region: no-drag;
             }
 

@@ -34,6 +34,8 @@ const STYLE_ID = "tesktop-account-tabs-style";
 const STRIP_ID = "tesktop-account-tabs-strip";
 
 const CSS = `
+:root { --tesktop-account-tabs-height: 38px; }
+
 #${STRIP_ID} {
     display: flex;
     align-items: stretch;
@@ -50,6 +52,20 @@ const CSS = `
     overflow-y: hidden;
     scrollbar-width: none;
     user-select: none;
+    /*
+     * Discord's own layout is position:fixed and paints above static content, so a
+     * strip left in normal flow loses mouse hit-testing to the app underneath: the
+     * buttons look real and silently swallow every click. Pin it to the top of the
+     * viewport, above everything, which is also what the shell window expects.
+     */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2147483647;
+    /* The window may be frameless, in which case the body is a drag region and
+       anything inside it becomes undraggable-but-unclickable. */
+    -webkit-app-region: no-drag;
 }
 #${STRIP_ID}::-webkit-scrollbar { display: none; }
 
@@ -167,7 +183,7 @@ const CSS = `
 }
 .tesktop-account-tabs-button:hover { background: rgba(255,255,255,0.1); color: var(--text-normal, #f2f3f5); }
 
-.tesktop-account-tabs-spacer { flex: 1 1 auto; min-width: 8px; }
+.tesktop-account-tabs-spacer { flex: 1 1 auto; min-width: 8px; -webkit-app-region: drag; }
 
 .tesktop-account-tabs-empty {
     display: flex;
@@ -177,6 +193,15 @@ const CSS = `
     font-size: 12px;
     white-space: nowrap;
 }
+
+/*
+ * Push Discord's app clear of the fixed strip above. appMount is the container
+ * Discord pins with position:fixed, so body padding alone does not move it — this
+ * is the same selector the previous Tesktop tabs used, and the only part of that
+ * approach that was known to work.
+ */
+body.tesktop-account-tabs-on { padding-top: var(--tesktop-account-tabs-height) !important; }
+body.tesktop-account-tabs-on [class*="appMount"] { margin-top: var(--tesktop-account-tabs-height) !important; }
 `;
 
 /**
@@ -359,11 +384,11 @@ export async function mountAccountTabBar(callbacks: TabBarCallbacks, options: Ta
 }
 
 /**
- * Push the tab bar to the top of the viewport and get Discord's app out from under
- * it. Discord's own layout is `position: fixed` and does not know about us.
+ * Turn the strip's offset rules on. The rules themselves live in the shared
+ * stylesheet so there is a single source of truth for the layout.
  *
  * Waits for `<body>`: the renderer bundle runs before DOMContentLoaded, and on the
- * login page there is nothing to prepend to yet.
+ * login page there is nothing to attach a class to yet.
  */
 export async function offsetAppForTabBar(): Promise<void> {
     if (!document.body) {
@@ -372,17 +397,9 @@ export async function offsetAppForTabBar(): Promise<void> {
         );
     }
 
-    if (document.getElementById("tesktop-account-tabs-offset")) return;
+    if (document.getElementById(STYLE_ID)) return;
 
-    const style = document.createElement("style");
-    style.id = "tesktop-account-tabs-offset";
-    style.textContent = `
-        :root { --tesktop-account-tabs-height: 38px; }
-        #app, [class^="app-"] { --tesktop-account-tabs-height: 38px; }
-        body.tesktop-account-tabs-on { padding-top: var(--tesktop-account-tabs-height) !important; }
-        body.tesktop-account-tabs-on #app { top: var(--tesktop-account-tabs-height) !important; }
-    `;
-    document.head.appendChild(style);
+    ensureStyle();
     document.body.classList.add("tesktop-account-tabs-on");
 }
 
